@@ -1,8 +1,7 @@
-from typing import List
-from tensordict.prototype import tensorclass
+from .guards import checked_tensorclass
 from .layer import Layer
 
 
-@tensorclass
+@checked_tensorclass
 class Scene:
-    layers: List[Layer]
+    layer: Layer

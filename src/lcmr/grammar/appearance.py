@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+import torch
+from torchtyping import TensorType
+from .guards import checked_tensorclass, batch_dim, layer_dim, object_dim
 
 
-@dataclass
+@checked_tensorclass
 class Appearance:
-    confidence: float
-    r: float
-    g: float
-    b: float
+    confidence: TensorType[batch_dim, layer_dim, object_dim, 1, torch.float32]
+    color: TensorType[batch_dim, layer_dim, object_dim, 3, torch.float32]

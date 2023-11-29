@@ -1,12 +1,11 @@
-from typing import List
-from tensordict.prototype import tensorclass
-from lcmr.grammar.blend_modes import BlendModes
-from lcmr.grammar.object_group import ObjectGroup
+import torch
+from torchtyping import TensorType
+from .object import Object
+from .guards import checked_tensorclass, batch_dim, layer_dim
 
 
-@tensorclass
+@checked_tensorclass
 class Layer:
-    groups: List[ObjectGroup]
-    scale: float
-    composition: BlendModes
-
+    object: Object
+    scale: TensorType[batch_dim, layer_dim, 1, torch.float32]
+    composition: TensorType[batch_dim, layer_dim, 1, torch.uint8]

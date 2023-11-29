@@ -1,5 +1,5 @@
-from lcmr.grammar.shapes import Shape
+from enum import Enum
 
 
-class Shape2D(Shape):
-    pass
+class Shape2D(Enum):
+    DISC = 1
