@@ -1,11 +1,13 @@
-from tensordict.prototype import tensorclass
+from typing import Union
+import torch
+from torchtyping import TensorType
+from .guards import checked_tensorclass, batch_dim, layer_dim, object_dim
 from .appearance import Appearance
-from .transformations import Transformation
-from .shapes import Shape
+from .transformations import Identity, Translation, Affine
 
 
-@tensorclass
+@checked_tensorclass
 class Object:
-    shape: Shape
-    transformation: Transformation
+    objectShape: TensorType[batch_dim, layer_dim, object_dim, 1, torch.uint8]
+    transformation: Union[Identity, Translation, Affine]
     appearance: Appearance
