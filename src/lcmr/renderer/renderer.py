@@ -1,6 +1,6 @@
 import abc
 import torch
-from lcmr.grammar import Scene
+from ..grammar import Scene
 
 
 class Renderer(abc.ABC):
