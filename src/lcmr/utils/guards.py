@@ -18,3 +18,10 @@ def checked_tensorclass(cls: type):
 batch_dim = "batch_dim"
 layer_dim = "layer_dim"
 object_dim = "object_dim"
+
+height_dim = "height_dim"
+width_dim = "width_dim"
+optional_dims = "optional_dims"
+
+vec_dim = "vec_dim"
+channel_dim = "channel_dim"

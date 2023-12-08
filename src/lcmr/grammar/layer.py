@@ -1,7 +1,7 @@
 import torch
 from torchtyping import TensorType
 from .object import Object
-from .guards import checked_tensorclass, batch_dim, layer_dim
+from ..utils.guards import checked_tensorclass, batch_dim, layer_dim
 
 
 @checked_tensorclass
