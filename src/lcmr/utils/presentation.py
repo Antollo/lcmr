@@ -12,7 +12,7 @@ in_colab = "google.colab" in sys.modules
 
 @typechecked
 def tensor_to_img(img: TensorType[height_dim, width_dim, channel_dim, torch.float32]) -> Image:
-    return Image.fromarray((img.detach().cpu().numpy() * 255).astype(np.uint8))
+    return Image.fromarray((img.detach().clamp(0, 1).cpu().numpy() * 255).astype(np.uint8))
 
 
 @typechecked
