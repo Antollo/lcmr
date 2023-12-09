@@ -3,9 +3,9 @@ from torchtyping import TensorType
 import moderngl
 from math import pi
 
-from .renderer2d import Renderer2D, height_dim, width_dim
-from ...grammar import Scene, Layer
-from ...utils.guards import typechecked, batch_dim
+from lcmr.renderer.renderer2d.renderer2d import Renderer2D, height_dim, width_dim
+from lcmr.grammar import Scene, Layer
+from lcmr.utils.guards import typechecked, batch_dim
 
 
 @typechecked

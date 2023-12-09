@@ -1,11 +1,11 @@
 import torch
 from torchtyping import TensorType
 
-from ..utils.guards import checked_tensorclass, typechecked, batch_dim, layer_dim, object_dim
-from .layer import Layer
-from .object import Object
-from .transformations import Affine, LazyAffine
-from .appearance import Appearance
+from lcmr.utils.guards import checked_tensorclass, typechecked, batch_dim, layer_dim, object_dim
+from lcmr.grammar.layer import Layer
+from lcmr.grammar.object import Object
+from lcmr.grammar.transformations import Affine, LazyAffine
+from lcmr.grammar.appearance import Appearance
 
 
 @checked_tensorclass

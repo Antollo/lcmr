@@ -1,1 +1,1 @@
-from .modeler import Modeler
+from lcmr.modeler import Modeler

@@ -1,6 +1,6 @@
 import torch
 from torchtyping import TensorType
-from ..utils.guards import checked_tensorclass, batch_dim, layer_dim, object_dim
+from lcmr.utils.guards import checked_tensorclass, batch_dim, layer_dim, object_dim
 
 
 @checked_tensorclass

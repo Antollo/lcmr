@@ -1,9 +1,9 @@
 import torch
 from torchtyping import TensorType
 
-from ...utils.guards import checked_tensorclass, typechecked, batch_dim, layer_dim, object_dim
-from .transformation import Transformation, optional_dims, vec_dim
-from .utils import matrix3x3_from_tensors
+from lcmr.utils.guards import checked_tensorclass, typechecked, batch_dim, layer_dim, object_dim
+from lcmr.grammar.transformations.transformation import Transformation, optional_dims, vec_dim
+from lcmr.grammar.transformations.utils import matrix3x3_from_tensors
 
 
 @checked_tensorclass

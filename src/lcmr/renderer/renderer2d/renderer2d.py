@@ -2,9 +2,9 @@ import abc
 import torch
 from torchtyping import TensorType
 
-from ...grammar import Scene
-from ...utils.guards import batch_dim, height_dim, width_dim, optional_dims
-from ..renderer import Renderer
+from lcmr.grammar import Scene
+from lcmr.utils.guards import batch_dim, height_dim, width_dim, optional_dims
+from lcmr.renderer.renderer import Renderer
 
 
 class Renderer2D(Renderer):

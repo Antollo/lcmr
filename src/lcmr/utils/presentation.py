@@ -5,7 +5,7 @@ from PIL import Image
 from IPython.display import display, HTML
 import sys
 
-from .guards import typechecked, height_dim, width_dim, channel_dim
+from lcmr.utils.guards import typechecked, height_dim, width_dim, channel_dim
 
 in_colab = "google.colab" in sys.modules
 
@@ -28,4 +28,4 @@ def display_img(img: TensorType[height_dim, width_dim, channel_dim, torch.float3
             )
         )
 
-    display(tensor_to_img(img))
+    display(tensor_to_img(img).convert("RGB"))

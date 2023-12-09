@@ -1,9 +1,9 @@
 from typing import Union
 import torch
 from torchtyping import TensorType
-from ..utils.guards import checked_tensorclass, batch_dim, layer_dim, object_dim
-from .appearance import Appearance
-from .transformations import Identity, Translation, Affine, LazyAffine
+from lcmr.utils.guards import checked_tensorclass, batch_dim, layer_dim, object_dim
+from lcmr.grammar.appearance import Appearance
+from lcmr.grammar.transformations import Identity, Translation, Affine, LazyAffine
 
 
 @checked_tensorclass
