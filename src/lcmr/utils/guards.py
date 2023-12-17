@@ -21,6 +21,10 @@ object_dim = "object_dim"
 
 height_dim = "height_dim"
 width_dim = "width_dim"
+
+reduced_height_dim = "reduced_height_dim"
+reduced_width_dim = "reduced_width_dim"
+
 optional_dims = "optional_dims"
 
 vec_dim = "vec_dim"
