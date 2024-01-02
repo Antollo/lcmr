@@ -30,3 +30,6 @@ optional_dims = "optional_dims"
 vec_dim = "vec_dim"
 channel_dim = "channel_dim"
 channel_dim_2 = "channel_dim_2"
+
+grid_width = "grid_width"
+grid_height = "grid_height"
