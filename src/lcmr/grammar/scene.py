@@ -48,17 +48,17 @@ class Scene:
         angle: TensorType[batch_dim, layer_dim, grid_height, grid_width, 1, torch.float32],
         color: TensorType[batch_dim, layer_dim, grid_height, grid_width, 3, torch.float32],
         confidence: TensorType[batch_dim, layer_dim, grid_height, grid_width, 1, torch.float32],
-        cordinates_scale: TensorType[batch_dim, layer_dim, 2, torch.float32]
+        coordinates_scale: TensorType[batch_dim, layer_dim, 2, torch.float32]
     ) -> "Scene":
         batch_len, layer_len, grid_height, grid_width, _ = translation.shape
         object_len =  grid_height * grid_width
 
-        # scale the translation with the cordinates_scale
+        # scale the translation with the coordinates_scale
         # there is an inner rectangle which determines maximal movement of an object in both x and y directions
         # we rescale the translations which are provided in the inner rectangle to the shape of the outer rectangle.
         inner_square_coords = translation
-        translation_inner_rectangle = (torch.tensor([1., 1.], dtype=torch.float32)[None, None, ...] - cordinates_scale) / 2
-        scaling_inner_rectangle = cordinates_scale / (torch.tensor([1., 1.], dtype=torch.float32)[None, None, ...] - translation_inner_rectangle)
+        translation_inner_rectangle = (torch.tensor([1., 1.], dtype=torch.float32)[None, None, ...] - coordinates_scale) / 2
+        scaling_inner_rectangle = coordinates_scale / (torch.tensor([1., 1.], dtype=torch.float32)[None, None, ...] - translation_inner_rectangle)
         inner_square_coords *= scaling_inner_rectangle
         inner_square_coords = inner_square_coords * (1 - translation_inner_rectangle) + translation_inner_rectangle
         translation = inner_square_coords
@@ -70,15 +70,14 @@ class Scene:
         translation = translation * grid_size
 
         # Add the coordinates of the top-left corner of each grid cell to the translation
-        grid_y, grid_x = torch.meshgrid(torch.arange(grid_height), torch.arange(grid_width))
-        grid_y, grid_x = grid_y.float() / grid_height, grid_x.float() / grid_width
+        grid_y, grid_x = torch.meshgrid(torch.arange(grid_height, dtype=torch.float32) / grid_height, torch.arange(grid_width, dtype=torch.float32) / grid_width, indexing="ij")
         translation_add = torch.stack([grid_x, grid_y], dim=-1)[None, None, :, :, :]
         translation = translation + translation_add
 
         # scale the object scale with the grid height and width
         object_scale = object_scale * grid_size
 
-        # flatten accross object_dim
+        # flatten across object_dim
         translation = translation.reshape(batch_len, layer_len, object_len, 2)
         object_scale = object_scale.reshape(batch_len, layer_len, object_len, 2)
         angle = angle.reshape(batch_len, layer_len, object_len, 1)
