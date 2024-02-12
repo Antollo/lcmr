@@ -5,7 +5,7 @@ from math import pi
 
 from lcmr.renderer.renderer2d.renderer2d import Renderer2D, height_dim, width_dim
 from lcmr.grammar import Scene, Layer
-from lcmr.utils.guards import typechecked, batch_dim
+from lcmr.utils.guards import typechecked, ImageBHWC4, ImageHWC4
 
 
 @typechecked
@@ -40,7 +40,7 @@ class OpenGLRenderer2D(Renderer2D):
 
         self.last_length = -1
 
-    def render(self, scene: Scene) -> TensorType[batch_dim, height_dim, width_dim, 4, torch.float32]:
+    def render(self, scene: Scene) -> ImageBHWC4:
         if len(scene) == 1:
             return self.render_scene(scene)
         else:
@@ -76,7 +76,7 @@ class OpenGLRenderer2D(Renderer2D):
             self.color_vbo.write(layer.object.appearance.color.reshape(-1).detach().cpu().numpy())
             self.confidence_vbo.write(layer.object.appearance.confidence.reshape(-1).detach().cpu().numpy())
 
-    def render_layer(self, layer: Layer) -> TensorType[height_dim, width_dim, 4, torch.float32]:
+    def render_layer(self, layer: Layer) -> ImageHWC4:
         self.init_vao(layer)
 
         # Online tool to visualize OpenGL blenfing on examples https://www.andersriggelsen.dk/glblendfunc.php

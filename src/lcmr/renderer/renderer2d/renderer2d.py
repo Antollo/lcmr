@@ -3,7 +3,7 @@ import torch
 from torchtyping import TensorType
 
 from lcmr.grammar import Scene
-from lcmr.utils.guards import batch_dim, height_dim, width_dim, optional_dims
+from lcmr.utils.guards import ImageBHWC4, height_dim, width_dim, optional_dims
 from lcmr.renderer.renderer import Renderer
 
 
@@ -12,11 +12,11 @@ class Renderer2D(Renderer):
         self.raster_size = raster_size
 
     @abc.abstractmethod
-    def render(self, scene: Scene) -> TensorType[batch_dim, height_dim, width_dim, 4, torch.float32]:
+    def render(self, scene: Scene) -> ImageBHWC4:
         pass
 
+    @staticmethod
     def alpha_compositing(
-        self,
         src: TensorType[optional_dims:..., height_dim, width_dim, 4, torch.float32],
         dst: TensorType[optional_dims:..., height_dim, width_dim, 4, torch.float32],
     ) -> TensorType[optional_dims:..., height_dim, width_dim, 4, torch.float32]:

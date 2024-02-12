@@ -1,6 +1,9 @@
+import torch
 from tensordict.prototype import tensorclass
-from torchtyping import patch_typeguard
+from torchtyping import patch_typeguard, TensorType
 from typeguard import typechecked
+from dataclasses import dataclass
+from typing import NewType
 
 patch_typeguard()
 
@@ -13,6 +16,10 @@ def checked_constructor(cls: type):
 
 def checked_tensorclass(cls: type):
     return checked_constructor(tensorclass(cls))
+
+
+def checked_dataclass(cls: type):
+    return checked_constructor(dataclass(cls))
 
 
 batch_dim = "batch_dim"
@@ -33,3 +40,7 @@ channel_dim_2 = "channel_dim_2"
 
 grid_width = "grid_width"
 grid_height = "grid_height"
+
+ImageBHWC4 = NewType("ImageBHWC4", TensorType[batch_dim, height_dim, width_dim, 4, torch.float32])
+ImageBHWC3 = NewType("ImageBHWC3", TensorType[batch_dim, height_dim, width_dim, 3, torch.float32])
+ImageHWC4 = NewType("ImageHWC4", TensorType[height_dim, width_dim, 4, torch.float32])

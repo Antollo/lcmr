@@ -28,4 +28,4 @@ def display_img(img: TensorType[height_dim, width_dim, channel_dim, torch.float3
             )
         )
 
-    display(tensor_to_img(img).convert("RGB"))
+    display(tensor_to_img(img).convert("RGBA"))

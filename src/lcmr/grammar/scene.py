@@ -20,6 +20,7 @@ class Scene:
         angle: TensorType[batch_dim, layer_dim, object_dim, 1, torch.float32],
         color: TensorType[batch_dim, layer_dim, object_dim, 3, torch.float32],
         confidence: TensorType[batch_dim, layer_dim, object_dim, 1, torch.float32],
+        device: torch.device = torch.device("cpu"),
     ) -> "Scene":
         batch_len, layer_len, object_len, _ = translation.shape
 
@@ -29,13 +30,14 @@ class Scene:
                 batch_size=[batch_len, layer_len],
                 object=Object(
                     batch_size=[batch_len, layer_len, object_len],
-                    objectShape=torch.ones(batch_len, layer_len, object_len, 1, dtype=torch.uint8),
+                    objectShape=torch.ones(batch_len, layer_len, object_len, 1, dtype=torch.uint8, device=device),
                     transformation=LazyAffine.from_tensors(translation, scale, angle),
                     appearance=Appearance(batch_size=[batch_len, layer_len, object_len], confidence=confidence, color=color),
                 ),
-                scale=torch.ones(batch_len, layer_len, 1),
-                composition=torch.ones(batch_len, layer_len, 1, dtype=torch.uint8),
+                scale=torch.ones(batch_len, layer_len, 1, device=device),
+                composition=torch.ones(batch_len, layer_len, 1, dtype=torch.uint8, device=device),
             ),
+            device=device,
         )
 
         return scene
@@ -48,7 +50,8 @@ class Scene:
         angle: TensorType[batch_dim, layer_dim, grid_height, grid_width, 1, torch.float32],
         color: TensorType[batch_dim, layer_dim, grid_height, grid_width, 3, torch.float32],
         confidence: TensorType[batch_dim, layer_dim, grid_height, grid_width, 1, torch.float32],
-        coordinates_scale: TensorType[batch_dim, layer_dim, 2, torch.float32]
+        coordinates_scale: TensorType[batch_dim, layer_dim, 2, torch.float32],
+        device: torch.device = torch.device("cpu")
     ) -> "Scene":
         batch_len, layer_len, grid_height, grid_width, _ = translation.shape
         object_len =  grid_height * grid_width
@@ -84,5 +87,5 @@ class Scene:
         color = color.reshape(batch_len, layer_len, object_len, 3)
         confidence = confidence.reshape(batch_len, layer_len, object_len, 1)
 
-        scene = Scene.from_tensors_sparse(translation, object_scale, angle, color, confidence)
+        scene = Scene.from_tensors_sparse(translation, object_scale, angle, color, confidence, device=device)
         return scene
