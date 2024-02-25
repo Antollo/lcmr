@@ -3,22 +3,23 @@ from tensordict.prototype import tensorclass
 from torchtyping import patch_typeguard, TensorType
 from typeguard import typechecked
 from dataclasses import dataclass
-from typing import NewType
+from typing import NewType, TypeVar
 
 patch_typeguard()
 
+Type = TypeVar('Type')
 
-def checked_constructor(cls: type):
+def checked_constructor(cls: Type) -> Type:
     if hasattr(cls, "__init__"):
         cls.__init__ = typechecked(cls.__init__)
     return cls
 
 
-def checked_tensorclass(cls: type):
+def checked_tensorclass(cls: Type) -> Type:
     return checked_constructor(tensorclass(cls))
 
 
-def checked_dataclass(cls: type):
+def checked_dataclass(cls: Type) -> Type:
     return checked_constructor(dataclass(cls))
 
 

@@ -1,6 +1,161 @@
 import torch
-from collections import namedtuple
+from torchtyping import TensorType
 from matplotlib import colors as mcolors
+from dataclasses import dataclass
 
-Colors = namedtuple("Colors", mcolors.CSS4_COLORS.keys())
-colors = Colors(**{key: torch.tensor(mcolors.to_rgba(value), dtype=torch.float32) for key, value in mcolors.CSS4_COLORS.items()})
+Color = TensorType[4, torch.float32]
+
+
+@dataclass
+class Colors:
+    aliceblue: Color
+    antiquewhite: Color
+    aqua: Color
+    aquamarine: Color
+    azure: Color
+    beige: Color
+    bisque: Color
+    black: Color
+    blanchedalmond: Color
+    blue: Color
+    blueviolet: Color
+    brown: Color
+    burlywood: Color
+    cadetblue: Color
+    chartreuse: Color
+    chocolate: Color
+    coral: Color
+    cornflowerblue: Color
+    cornsilk: Color
+    crimson: Color
+    cyan: Color
+    darkblue: Color
+    darkcyan: Color
+    darkgoldenrod: Color
+    darkgray: Color
+    darkgreen: Color
+    darkgrey: Color
+    darkkhaki: Color
+    darkmagenta: Color
+    darkolivegreen: Color
+    darkorange: Color
+    darkorchid: Color
+    darkred: Color
+    darksalmon: Color
+    darkseagreen: Color
+    darkslateblue: Color
+    darkslategray: Color
+    darkslategrey: Color
+    darkturquoise: Color
+    darkviolet: Color
+    deeppink: Color
+    deepskyblue: Color
+    dimgray: Color
+    dimgrey: Color
+    dodgerblue: Color
+    firebrick: Color
+    floralwhite: Color
+    forestgreen: Color
+    fuchsia: Color
+    gainsboro: Color
+    ghostwhite: Color
+    gold: Color
+    goldenrod: Color
+    gray: Color
+    green: Color
+    greenyellow: Color
+    grey: Color
+    honeydew: Color
+    hotpink: Color
+    indianred: Color
+    indigo: Color
+    ivory: Color
+    khaki: Color
+    lavender: Color
+    lavenderblush: Color
+    lawngreen: Color
+    lemonchiffon: Color
+    lightblue: Color
+    lightcoral: Color
+    lightcyan: Color
+    lightgoldenrodyellow: Color
+    lightgray: Color
+    lightgreen: Color
+    lightgrey: Color
+    lightpink: Color
+    lightsalmon: Color
+    lightseagreen: Color
+    lightskyblue: Color
+    lightslategray: Color
+    lightslategrey: Color
+    lightsteelblue: Color
+    lightyellow: Color
+    lime: Color
+    limegreen: Color
+    linen: Color
+    magenta: Color
+    maroon: Color
+    mediumaquamarine: Color
+    mediumblue: Color
+    mediumorchid: Color
+    mediumpurple: Color
+    mediumseagreen: Color
+    mediumslateblue: Color
+    mediumspringgreen: Color
+    mediumturquoise: Color
+    mediumvioletred: Color
+    midnightblue: Color
+    mintcream: Color
+    mistyrose: Color
+    moccasin: Color
+    navajowhite: Color
+    navy: Color
+    oldlace: Color
+    olive: Color
+    olivedrab: Color
+    orange: Color
+    orangered: Color
+    orchid: Color
+    palegoldenrod: Color
+    palegreen: Color
+    paleturquoise: Color
+    palevioletred: Color
+    papayawhip: Color
+    peachpuff: Color
+    peru: Color
+    pink: Color
+    plum: Color
+    powderblue: Color
+    purple: Color
+    rebeccapurple: Color
+    red: Color
+    rosybrown: Color
+    royalblue: Color
+    saddlebrown: Color
+    salmon: Color
+    sandybrown: Color
+    seagreen: Color
+    seashell: Color
+    sienna: Color
+    silver: Color
+    skyblue: Color
+    slateblue: Color
+    slategray: Color
+    slategrey: Color
+    snow: Color
+    springgreen: Color
+    steelblue: Color
+    tan: Color
+    teal: Color
+    thistle: Color
+    tomato: Color
+    turquoise: Color
+    violet: Color
+    wheat: Color
+    white: Color
+    whitesmoke: Color
+    yellow: Color
+    yellowgreen: Color
+
+
+colors: Colors = Colors(**{key: torch.tensor(mcolors.to_rgba(value), dtype=torch.float32) for key, value in mcolors.CSS4_COLORS.items()})
