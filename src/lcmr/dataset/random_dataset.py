@@ -1,11 +1,18 @@
 import torch
 from torch.utils.data import Dataset
 from concurrent.futures import ProcessPoolExecutor
+import platform
 from typing import Optional
 
 from lcmr.grammar.scene import Scene
 from lcmr.renderer.renderer2d import Renderer2D
 from lcmr.dataset.dataset_options import DatasetOptions
+
+if platform.system() == "Linux":
+    try:
+        torch.multiprocessing.set_start_method("spawn")
+    except RuntimeError:
+        pass
 
 def renderer_from_options(options: DatasetOptions) -> Renderer2D:
     return options.Renderer(raster_size=options.raster_size, background_color=options.background_color, device=options.renderer_device)
@@ -30,7 +37,7 @@ def regenerate_job(options: DatasetOptions, arg_renderer: Optional[Renderer2D] =
     ]
     scenes = scenes
     images = [(arg_renderer or global_renderer).render(scene)[..., :3].cpu() for scene in scenes]
-    return list(zip(images, scenes))
+    return list(zip(images, scenes)) if options.return_scenes else images
 
 class RandomDataset(Dataset):
     def __init__(self, options: DatasetOptions):
@@ -38,7 +45,7 @@ class RandomDataset(Dataset):
         self.renderer = None
 
         if options.n_jobs > 1:
-            self.pool = ProcessPoolExecutor(max_workers=options.n_jobs, initargs=(options,), initializer=init_worker)
+            self.pool = ProcessPoolExecutor(max_workers=options.n_jobs, initargs=(options,), initializer=init_worker, mp_context=torch.multiprocessing)
             self.futures = []
             for _ in range(options.n_jobs):
                 self.append_new_job()
@@ -69,6 +76,6 @@ class RandomDataset(Dataset):
     def collate_fn(batch):
         if type(batch[0]) is tuple:
             batch = [list(x) for x in zip(*batch)]
-            return [torch.cat(x, dim=0).pin_memory() for x in batch]
+            return [torch.cat(x, dim=0) for x in batch]
         else:
-            return torch.cat(batch, dim=0).pin_memory()
+            return torch.cat(batch, dim=0)
