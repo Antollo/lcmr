@@ -170,13 +170,13 @@ class PyTorch3DRenderer2D(Renderer2D):
         background_color: TensorType[4, torch.float32] = torch.zeros(4),
         device: torch.device = torch.device("cpu"),
         with_alpha: bool = True,
-        v_count: int = 48,
+        n_verts: int = 48,
         faces_per_pixel: int = 32,
     ):
         super().__init__(raster_size)
 
         self.device = device
-        self.v_count = v_count
+        self.n_verts = n_verts
         self.with_alpha = with_alpha  # TODO: to be replaced with Scene's blending property
         self.background = background_color[None, None, ...].to(device).repeat(*self.raster_size, 1)[None, ...]
 
@@ -186,11 +186,11 @@ class PyTorch3DRenderer2D(Renderer2D):
 
         # prepare disk primitive
         radius = 1
-        angles = torch.linspace(0, 2 * np.pi, v_count)
+        angles = torch.linspace(0, 2 * np.pi, n_verts)
 
         x = radius * (torch.cos(angles))[..., None]
         y = radius * (torch.sin(angles))[..., None]
-        z = torch.ones(v_count)[..., None]
+        z = torch.ones(n_verts)[..., None]
 
         # shape: batch, layer, object, ...
         self.verts_disk = torch.cat((x, y, z), dim=-1)[None, None, None, ...].to(device)
@@ -198,7 +198,7 @@ class PyTorch3DRenderer2D(Renderer2D):
         # make circle from triangles with points only on edge of the circle
         # (triangles looks like sharp teeth on cartoon character drawing)
         self.faces_disk = torch.tensor(
-            [[i, i + 1, v_count - i - 1] for i in range(v_count // 2)] + [[v_count - i - 1, v_count - i - 2, i + 1] for i in range(v_count // 2)], device=device
+            [[i, i + 1, n_verts - i - 1] for i in range(n_verts // 2)] + [[n_verts - i - 1, n_verts - i - 2, i + 1] for i in range(n_verts // 2)], device=device
         )[None, None, None, ...]
 
         # https://pytorch3d.org/tutorials/fit_textured_mesh
@@ -231,7 +231,7 @@ class PyTorch3DRenderer2D(Renderer2D):
         verts[:, :, :, :, 2, None] = torch.arange(-object_len, 0, dtype=torch.float32, device=self.device)[None, None, :, None, None]
 
         faces = self.faces_disk.repeat(batch_len, layer_len, object_len, 1, 1)
-        self.faces_disk_offset = torch.arange(object_len, dtype=torch.float32, device=self.device)[None, None, :, None, None] * (self.v_count)
+        self.faces_disk_offset = torch.arange(object_len, dtype=torch.float32, device=self.device)[None, None, :, None, None] * (self.n_verts)
 
         faces = faces + self.faces_disk_offset  # this can be cached
 
@@ -243,7 +243,7 @@ class PyTorch3DRenderer2D(Renderer2D):
             colors[..., 3] = 1
 
         # Repeat color for each point, shape: batch, layer, object, vertex, channel
-        colors = colors.repeat(1, 1, 1, self.v_count, 1)
+        colors = colors.repeat(1, 1, 1, self.n_verts, 1)
 
         # flatten objects in layers, flatten layers and batch
         verts = verts.flatten(2, 3).flatten(0, 1)
@@ -259,7 +259,7 @@ class PyTorch3DRenderer2D(Renderer2D):
         meshes = Meshes(verts=verts, faces=faces, textures=textures)
 
         # This might be useful to concat more than one Meshes structures without manually
-        # setting indices for each instance (that would be painful if `v_count` is different
+        # setting indices for each instance (that would be painful if `n_verts` is different
         # in those structures)
         # meshes = pytorch3d.structures.join_meshes_as_scene([meshes1, meshes2])
 
