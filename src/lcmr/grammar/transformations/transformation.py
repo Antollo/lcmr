@@ -1,7 +1,8 @@
 import abc
 import torch
 from torchtyping import TensorType
-from ...utils.guards import optional_dims, vec_dim
+
+from lcmr.utils.guards import optional_dims, vec_dim
 
 
 class Transformation(abc.ABC):

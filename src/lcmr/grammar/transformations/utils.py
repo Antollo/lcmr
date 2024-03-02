@@ -3,8 +3,7 @@ from torchtyping import TensorType
 from kornia.geometry.transform import get_affine_matrix2d
 from math import pi, prod
 
-from .transformation import optional_dims
-from ...utils.guards import typechecked
+from lcmr.utils.guards import typechecked, optional_dims
 
 
 @typechecked

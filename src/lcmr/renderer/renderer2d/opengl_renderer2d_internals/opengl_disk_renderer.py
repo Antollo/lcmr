@@ -5,7 +5,7 @@ from math import pi
 from lcmr.grammar import Object
 from lcmr.grammar.shapes import Shape2D
 from lcmr.utils.guards import typechecked
-from lcmr.renderer.renderer2d.opengl_renderer2d_internals.opengl_shape_renderer import OpenGlShapeRenderer
+from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlShapeRenderer
 
 
 @typechecked

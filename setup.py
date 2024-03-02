@@ -15,6 +15,7 @@ setup(
         'torchtyping',
         'typeguard<3.0.0',  # torchtyping requires typeguard<3.0.0
         'kornia',
-        'moderngl'
+        'moderngl',
+        'mapbox-earcut'
     ]
 )

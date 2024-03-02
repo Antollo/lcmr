@@ -7,7 +7,8 @@ from typing import NewType, TypeVar
 
 patch_typeguard()
 
-Type = TypeVar('Type')
+Type = TypeVar("Type")
+
 
 def checked_constructor(cls: Type) -> Type:
     if hasattr(cls, "__init__"):
@@ -42,6 +43,8 @@ channel_dim_2 = "channel_dim_2"
 grid_width = "grid_width"
 grid_height = "grid_height"
 
+ImageBHWC = NewType("ImageBHWC", TensorType[batch_dim, height_dim, width_dim, channel_dim, torch.float32])
 ImageBHWC4 = NewType("ImageBHWC4", TensorType[batch_dim, height_dim, width_dim, 4, torch.float32])
 ImageBHWC3 = NewType("ImageBHWC3", TensorType[batch_dim, height_dim, width_dim, 3, torch.float32])
+ImageHWC = NewType("ImageHWC", TensorType[height_dim, width_dim, channel_dim, torch.float32])
 ImageHWC4 = NewType("ImageHWC4", TensorType[height_dim, width_dim, 4, torch.float32])

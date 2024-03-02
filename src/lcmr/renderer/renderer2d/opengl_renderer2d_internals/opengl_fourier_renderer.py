@@ -10,7 +10,7 @@ from mapbox_earcut import triangulate_float32
 from lcmr.grammar import Object
 from lcmr.grammar.shapes import Shape2D
 from lcmr.utils.guards import typechecked, object_dim, vec_dim, optional_dims
-from .opengl_shape_renderer import OpenGlShapeRenderer
+from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlShapeRenderer
 
 
 @cache

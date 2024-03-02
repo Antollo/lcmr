@@ -1,9 +1,9 @@
 import torch
 from torchtyping import TensorType
 
-from ...utils.guards import checked_tensorclass, typechecked, batch_dim, layer_dim, object_dim
-from .transformation import Transformation, optional_dims, vec_dim
-from .utils import matrix3x3_from_tensors
+from lcmr.grammar.transformations import Transformation
+from lcmr.utils.guards import checked_tensorclass, typechecked, batch_dim, layer_dim, object_dim, optional_dims, vec_dim
+from lcmr.grammar.transformations.utils import matrix3x3_from_tensors
 
 
 # TODO: support 4x4 matrices?
