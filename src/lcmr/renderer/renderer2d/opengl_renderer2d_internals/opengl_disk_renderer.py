@@ -1,17 +1,16 @@
 import moderngl
-from moderngl import Context, Framebuffer
 from math import pi
 
 from lcmr.grammar import Object
 from lcmr.grammar.shapes import Shape2D
 from lcmr.utils.guards import typechecked
-from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlShapeRenderer
+from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlShapeRenderer, OpenGlShapeRendererOptions
 
 
 @typechecked
 class OpenGlDiskRenderer(OpenGlShapeRenderer):
-    def __init__(self, ctx: Context, fbo: Framebuffer, n_verts: int):
-        super().__init__(ctx, fbo, Shape2D.DISK, n_verts)
+    def __init__(self, options: OpenGlShapeRendererOptions):
+        super().__init__(Shape2D.DISK, options)
 
     def init_vao(self, objects: Object):
         if self.last_length != objects.shape[0]:
@@ -65,7 +64,7 @@ class OpenGlDiskRenderer(OpenGlShapeRenderer):
             layout (points) in;
             in vec4 v_color[];
             in mat3 v_mat[];
-            layout (triangle_strip, max_vertices = {n_verts * 2 + 1}) out;
+            layout ({"line_strip" if self.contours_only else "triangle_strip"}, max_vertices = {n_verts * 2 + 1}) out;
             out vec4 g_color;
             
             void main() {{
@@ -80,10 +79,11 @@ class OpenGlDiskRenderer(OpenGlShapeRenderer):
                     g_color = v_color[0];
                     EmitVertex();
                     
-                    position = (vec3(0, 0, 1) * v_mat[0]).xy;
-                    gl_Position = vec4(position * 2 - 1, 0, 1);
-                    g_color = v_color[0];
-                    EmitVertex();
+                    {"" if self.contours_only else
+                    "position = (vec3(0, 0, 1) * v_mat[0]).xy;"
+                    "gl_Position = vec4(position * 2 - 1, 0, 1);"
+                    "g_color = v_color[0];"
+                    "EmitVertex();"}
                 }}
                 EndPrimitive();
             }}

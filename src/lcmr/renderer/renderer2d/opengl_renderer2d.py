@@ -5,7 +5,7 @@ import moderngl
 from lcmr.renderer.renderer2d.renderer2d import Renderer2D, height_dim, width_dim
 from lcmr.grammar import Scene, Layer
 from lcmr.utils.guards import typechecked, ImageBHWC4, ImageHWC4
-from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlDiskRenderer, OpenGlFourierRenderer
+from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlDiskRenderer, OpenGlFourierRenderer, OpenGlShapeRendererOptions
 
 
 @typechecked
@@ -18,6 +18,7 @@ class OpenGLRenderer2D(Renderer2D):
         n_verts: int = 64,
         device: torch.device = torch.device("cpu"),
         wireframe: bool = False,
+        contours_only: bool = False,
     ):
         super().__init__(raster_size)
 
@@ -27,7 +28,7 @@ class OpenGLRenderer2D(Renderer2D):
             # https://github.com/moderngl/moderngl/issues/392
             self.ctx = moderngl.create_standalone_context(backend="egl")
             samples = 1
-            
+
         self.ctx.gc_mode = "context_gc"
         self.fbo1 = self.ctx.framebuffer([self.ctx.renderbuffer(raster_size[::-1], components=4, samples=samples, dtype="f4")])
         self.fbo2 = self.ctx.framebuffer([self.ctx.renderbuffer(raster_size[::-1], components=4, dtype="f4")])
@@ -39,14 +40,15 @@ class OpenGLRenderer2D(Renderer2D):
         self.background = background_color[None, None, ...].to(device).repeat(*raster_size, 1)
         self.ctx.wireframe = wireframe
 
-        self.shape_renderers = [OpenGlDiskRenderer(self.ctx, self.fbo1, n_verts), OpenGlFourierRenderer(self.ctx, self.fbo1, n_verts)]
-        
+        options = OpenGlShapeRendererOptions(ctx=self.ctx, fbo=self.fbo1, n_verts=n_verts, contours_only=contours_only)
+        self.shape_renderers = [OpenGlDiskRenderer(options), OpenGlFourierRenderer(options)]
+
     def __del__(self):
         self.ctx.release()
 
     def render(self, scene: Scene) -> ImageBHWC4:
         self.ctx.gc()
-        
+
         if len(scene) == 1:
             return self.render_scene(scene)
         else:

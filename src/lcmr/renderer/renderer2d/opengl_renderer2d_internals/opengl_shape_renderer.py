@@ -1,18 +1,28 @@
 import abc
 from moderngl import Context, VertexArray, Framebuffer
+from dataclasses import dataclass
 
 from lcmr.grammar import Object
 from lcmr.grammar.shapes import Shape2D
 from lcmr.utils.guards import typechecked
 
+@typechecked
+@dataclass
+class OpenGlShapeRendererOptions:
+    ctx: Context
+    fbo: Framebuffer
+    n_verts: int
+    contours_only: bool
 
 @typechecked
 class OpenGlShapeRenderer(abc.ABC):
-    def __init__(self, ctx: Context, fbo: Framebuffer, objectShape: Shape2D, n_verts: int):
-        self.ctx = ctx
-        self.fbo = fbo
+    def __init__(self, objectShape: Shape2D, options: OpenGlShapeRendererOptions):
         self.objectShape = objectShape
-        self.n_verts = n_verts
+        
+        self.ctx = options.ctx
+        self.fbo = options.fbo
+        self.n_verts = options.n_verts
+        self.contours_only = options.contours_only
 
         self.vertex_shader: str
         self.geometry_shader: str
