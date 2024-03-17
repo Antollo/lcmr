@@ -3,7 +3,10 @@ import numpy as np
 from torchtyping import TensorType
 from functools import cache
 from collections.abc import Iterable
+from dataclasses import dataclass
 from mapbox_earcut import triangulate_float32
+from pyefd import elliptic_fourier_descriptors
+from sklearn.mixture import BayesianGaussianMixture
 
 from lcmr.utils.guards import typechecked, object_dim, vec_dim, optional_dims
 
@@ -71,3 +74,54 @@ def triangularize_contour(
         total += contour.shape[0]
 
     return np.concatenate(faces_list).reshape(-1, 2 if contour_only else 3)
+
+@typechecked
+@dataclass
+class FourierDescriptorsGeneratorOptions:
+    order: int = 8
+    n_points: int = 6
+    irregularity: float = 0.8
+    spikiness: float = 0.5
+
+@typechecked
+class FourierDescriptorsGenerator:
+    def __init__(self, options: FourierDescriptorsGeneratorOptions):
+        self.order = options.order
+        self.n_points = options.n_points
+        self.irregularity = options.irregularity
+        self.spikiness = options.spikiness
+        self.gmm = None
+
+    def random_angles(self, n_objects: int) -> TensorType[object_dim, -1, 1, torch.float32]:
+        low = (2 * np.pi / self.n_points) * (1.0 - self.irregularity)
+        high = (2 * np.pi / self.n_points) * (1.0 + self.irregularity)
+        angles = torch.rand((n_objects, self.n_points)) * (high - low) + low
+        angles = angles / (angles.sum(axis=-1, keepdims=True) / (2 * np.pi))
+        angles = angles.cumsum(axis=-1) + 2 * np.pi * torch.rand((n_objects, 1))
+        return angles[..., None]
+
+    def random_polygons(self, n_objects: int) -> TensorType[object_dim, -1, 2, torch.float32]:
+        # polygon generation code inspired by https://stackoverflow.com/a/25276331/14344875
+        angles = self.random_angles(n_objects)
+        r = (torch.randn_like(angles) * self.spikiness + 1).clip(0.01, 2)
+        x = torch.cos(angles)
+        y = torch.sin(angles)
+        contour = r * torch.cat((x, y), axis=-1)
+        contour = torch.nn.functional.pad(contour, (0, 0, 1, 1), "circular")
+        return contour
+
+    def __sample(self, n_objects: int) -> TensorType[object_dim, -1, 4, torch.float32]:
+        return torch.from_numpy(
+            np.array([elliptic_fourier_descriptors(x, order=self.order, normalize=True).astype(np.float32) for x in self.random_polygons(n_objects)])
+        )
+
+    def sample(self, n_objects: int = 1, use_gmm: bool = True) -> TensorType[object_dim, -1, 4, torch.float32]:
+        if use_gmm:
+            if self.gmm == None:
+                n_objects_X = 10_000
+                X = self.__sample(n_objects_X)
+                self.gmm = BayesianGaussianMixture(n_components=10, max_iter=500).fit(X.reshape(n_objects_X, -1))
+
+            return torch.from_numpy(self.gmm.sample(n_samples=n_objects)[0].astype(np.float32).reshape(n_objects, self.order, 4))
+        else:
+            return self.__sample(n_objects)
