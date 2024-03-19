@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from typing import Optional
 from torchtyping import TensorType
 from functools import cache
 from collections.abc import Iterable
@@ -75,6 +76,7 @@ def triangularize_contour(
 
     return np.concatenate(faces_list).reshape(-1, 2 if contour_only else 3)
 
+
 @typechecked
 @dataclass
 class FourierDescriptorsGeneratorOptions:
@@ -82,6 +84,8 @@ class FourierDescriptorsGeneratorOptions:
     n_points: int = 6
     irregularity: float = 0.8
     spikiness: float = 0.5
+    choices: Optional[TensorType[object_dim, -1, 4, torch.float32]] = None
+
 
 @typechecked
 class FourierDescriptorsGenerator:
@@ -90,6 +94,7 @@ class FourierDescriptorsGenerator:
         self.n_points = options.n_points
         self.irregularity = options.irregularity
         self.spikiness = options.spikiness
+        self.choices = options.choices
         self.gmm = None
 
     def random_angles(self, n_objects: int) -> TensorType[object_dim, -1, 1, torch.float32]:
@@ -116,6 +121,9 @@ class FourierDescriptorsGenerator:
         )
 
     def sample(self, n_objects: int = 1, use_gmm: bool = True) -> TensorType[object_dim, -1, 4, torch.float32]:
+        if self.choices != None:
+            indices = torch.randint(low=0, high=len(self.choices), size=(n_objects,), dtype=torch.int32)
+            return self.choices[indices]
         if use_gmm:
             if self.gmm == None:
                 n_objects_X = 10_000

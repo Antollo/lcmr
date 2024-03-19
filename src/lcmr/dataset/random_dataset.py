@@ -52,7 +52,7 @@ def regenerate_job(options: DatasetOptions, arg_renderer: Optional[Renderer2D] =
         for _ in range(options.n_samples)
     ]
 
-    images = [renderer.render(scene)[..., :3].cpu() for scene in scenes]
+    images = [renderer.render(scene)[..., :3].cpu() for scene in scenes] if options.return_images else None
 
     if options.return_scenes and options.return_images:
         return list(zip(images, scenes))
@@ -67,7 +67,8 @@ def regenerate_job(options: DatasetOptions, arg_renderer: Optional[Renderer2D] =
 class RandomDataset(Dataset):
     def __init__(self, options: DatasetOptions):
         self.options = options
-        self.renderer = None
+        self.renderer: Optional[Renderer2D] = None
+        self.fdg: Optional[FourierDescriptorsGenerator] = None
 
         if options.n_jobs > 1:
             self.pool = ProcessPoolExecutor(max_workers=options.n_jobs, initargs=(options,), initializer=init_worker, mp_context=torch.multiprocessing)

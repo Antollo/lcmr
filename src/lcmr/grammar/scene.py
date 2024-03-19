@@ -12,6 +12,7 @@ from lcmr.grammar.appearance import Appearance
 @checked_tensorclass
 class Scene:
     layer: Layer
+    backgroundColor: Optional[TensorType[batch_dim, 3, torch.float32]] = None
 
     @staticmethod
     @typechecked
@@ -23,6 +24,7 @@ class Scene:
         confidence: TensorType[batch_dim, layer_dim, object_dim, 1, torch.float32],
         objectShape: Optional[TensorType[batch_dim, layer_dim, object_dim, 1, torch.uint8]] = None,
         fourierCoefficients: Optional[TensorType[batch_dim, layer_dim, object_dim, -1, 4, torch.float32]] = None,
+        backgroundColor: Optional[TensorType[batch_dim, 3, torch.float32]] = None,
         device: torch.device = torch.device("cpu"),
     ) -> "Scene":
         batch_len, layer_len, object_len, _ = translation.shape
@@ -41,6 +43,7 @@ class Scene:
                 scale=torch.ones(batch_len, layer_len, 1, device=device),
                 composition=torch.ones(batch_len, layer_len, 1, dtype=torch.uint8, device=device),
             ),
+            backgroundColor=backgroundColor,
             device=device,
         )
 
