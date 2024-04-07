@@ -10,6 +10,7 @@ from pyefd import elliptic_fourier_descriptors
 from sklearn.mixture import BayesianGaussianMixture
 
 from lcmr.utils.guards import typechecked, object_dim, vec_dim, optional_dims
+from lcmr.utils.math import angle_to_rotation_matrix
 
 
 @cache
@@ -40,6 +41,35 @@ def reconstruct_contour(descriptors: TensorType[optional_dims:..., -1, 4, torch.
 
     reconstruction = torch.stack((xt_all, yt_all), axis=-1)
     return reconstruction
+
+
+@typechecked
+def normalize_efd(descriptors: TensorType[optional_dims:..., -1, 4, torch.float32]) -> TensorType[optional_dims:..., -1, 4, torch.float32]:
+    # based on pyefd.normalize_efd
+    device = descriptors.device
+    shape = descriptors.shape
+    descriptors = descriptors.reshape(-1, shape[-2], shape[-1])
+
+    a, b, c, d = descriptors[..., 0, 0], descriptors[..., 0, 1], descriptors[..., 0, 2], descriptors[..., 0, 3]
+
+    theta_1 = 0.5 * torch.arctan2(2 * (a * b + c * d), a**2 - b**2 + c**2 - d**2)
+
+    theta_array = (torch.arange(1, descriptors.shape[-2] + 1, dtype=torch.float32, device=device)[None, :] * theta_1[:, None])[..., None]
+    theta_rotation_matrix = angle_to_rotation_matrix(-theta_array)
+
+    descriptors = torch.matmul(descriptors.unflatten(dim=-1, sizes=(2, 2)), theta_rotation_matrix).flatten(-2, -1)
+
+    psi_1 = torch.arctan2(descriptors[..., 0, 2], descriptors[..., 0, 0])[..., None]
+    psi_rotation_matrix = angle_to_rotation_matrix(psi_1)[:, None, ...]
+
+    descriptors = torch.matmul(psi_rotation_matrix, descriptors.unflatten(dim=-1, sizes=(2, 2))).flatten(-2, -1)
+
+    size = descriptors[..., 0, 0]
+    descriptors = descriptors / torch.abs(size)[:, None, None]
+    
+    descriptors = descriptors.reshape(*shape)
+
+    return descriptors
 
 
 @typechecked
@@ -85,6 +115,7 @@ class FourierDescriptorsGeneratorOptions:
     irregularity: float = 0.8
     spikiness: float = 0.5
     choices: Optional[TensorType[object_dim, -1, 4, torch.float32]] = None
+    use_gmm: bool = False
 
 
 @typechecked
@@ -95,6 +126,7 @@ class FourierDescriptorsGenerator:
         self.irregularity = options.irregularity
         self.spikiness = options.spikiness
         self.choices = options.choices
+        self.use_gmm = options.use_gmm
         self.gmm = None
 
     def random_angles(self, n_objects: int) -> TensorType[object_dim, -1, 1, torch.float32]:
@@ -120,11 +152,11 @@ class FourierDescriptorsGenerator:
             np.array([elliptic_fourier_descriptors(x, order=self.order, normalize=True).astype(np.float32) for x in self.random_polygons(n_objects)])
         )
 
-    def sample(self, n_objects: int = 1, use_gmm: bool = True) -> TensorType[object_dim, -1, 4, torch.float32]:
+    def sample(self, n_objects: int = 1) -> TensorType[object_dim, -1, 4, torch.float32]:
         if self.choices != None:
             indices = torch.randint(low=0, high=len(self.choices), size=(n_objects,), dtype=torch.int32)
             return self.choices[indices]
-        if use_gmm:
+        if self.use_gmm:
             if self.gmm == None:
                 n_objects_X = 10_000
                 X = self.__sample(n_objects_X)

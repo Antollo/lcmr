@@ -26,10 +26,10 @@ class OpenGlFourierRenderer(OpenGlShapeRenderer):
         verts = verts.split(mask.sum(axis=-2).flatten().tolist())
         faces = triangularize_contour(verts, contour_only=self.contours_only)
 
-        colors = objects.appearance.color.repeat(1, self.n_verts).reshape(-1, self.n_verts, 3)
+        colors = objects.appearance.color.expand(-1, self.n_verts).reshape(-1, self.n_verts, 3)
         colors = torch.masked_select(colors, mask).view(-1, 3)
 
-        confidence = objects.appearance.confidence.repeat(1, self.n_verts).reshape(-1, self.n_verts, 1)
+        confidence = objects.appearance.confidence.expand(-1, self.n_verts).reshape(-1, self.n_verts, 1)
         confidence = torch.masked_select(confidence, mask).view(-1, 1)
 
         self.vert_vbo = self.ctx.buffer(torch.cat(verts).detach().cpu().contiguous().numpy())

@@ -37,7 +37,7 @@ class OpenGLRenderer2D(Renderer2D):
         self.device = device
         self.background_color = background_color.to(device)
         self.background_color_list = background_color.tolist()
-        self.background = background_color[None, None, ...].to(device).repeat(*raster_size, 1)
+        self.background = background_color[None, None, ...].to(device).expand(*raster_size, -1)
         self.ctx.wireframe = wireframe
 
         options = OpenGlShapeRendererOptions(ctx=self.ctx, fbo=self.fbo1, n_verts=n_verts, contours_only=contours_only)
