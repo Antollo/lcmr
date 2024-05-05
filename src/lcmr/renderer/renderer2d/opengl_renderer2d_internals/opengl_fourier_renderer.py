@@ -3,7 +3,7 @@ import moderngl
 
 from lcmr.grammar import Object
 from lcmr.grammar.shapes import Shape2D
-from lcmr.utils.fourier_shape_descriptors import reconstruct_contour, simplify_contour, triangularize_contour
+from lcmr.utils.fourier_shape_descriptors import reconstruct_contour, simplify_contour, triangulate_contour
 from lcmr.utils.guards import typechecked
 from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlShapeRenderer, OpenGlShapeRendererOptions
 
@@ -26,7 +26,7 @@ class OpenGlFourierRenderer(OpenGlShapeRenderer):
         verts = verts.split(mask.sum(axis=-2).flatten().tolist())
         faces = triangularize_contour(verts, contour_only=self.contours_only)
 
-        colors = objects.appearance.color.expand(-1, self.n_verts).reshape(-1, self.n_verts, 3)
+        colors = objects.appearance.color.repeat(1, self.n_verts).reshape(-1, self.n_verts, 3)
         colors = torch.masked_select(colors, mask).view(-1, 3)
 
         confidence = objects.appearance.confidence.expand(-1, self.n_verts).reshape(-1, self.n_verts, 1)

@@ -1,5 +1,4 @@
 import torch
-from torch.utils.data import Dataset
 from concurrent.futures import ProcessPoolExecutor
 from typing import Optional
 import platform
@@ -7,8 +6,9 @@ import platform
 from lcmr.grammar.scene import Scene
 from lcmr.grammar.shapes import Shape2D
 from lcmr.renderer.renderer2d import Renderer2D
-from lcmr.dataset.dataset_options import DatasetOptions
 from lcmr.utils.fourier_shape_descriptors import FourierDescriptorsGenerator
+from lcmr.dataset.dataset_options import DatasetOptions
+from lcmr.dataset.any_dataset import AnyDataset
 
 if platform.system() == "Linux":
     try:
@@ -39,20 +39,20 @@ def regenerate_job(options: DatasetOptions, arg_renderer: Optional[Renderer2D] =
     renderer = arg_renderer or global_renderer
     fdg = arg_fdg or global_fdg
 
-    scenes = [
-        Scene.from_tensors_sparse(
-            translation=torch.rand(1, 1, n_objects, 2),
-            scale=torch.rand(1, 1, n_objects, 2) / 5 + 0.05,
-            angle=torch.rand(1, 1, n_objects, 1),
-            color=torch.rand(1, 1, n_objects, 3),
-            confidence=torch.ones(1, 1, n_objects, 1),
-            objectShape=torch.ones(1, 1, n_objects, 1, dtype=torch.uint8) * (Shape2D.DISK.value if fdg == None else Shape2D.FOURIER_SHAPE.value),
-            fourierCoefficients=None if fdg == None else fdg.sample(n_objects)[None, None, ...],
-        )
-        for _ in range(options.n_samples)
-    ]
-
-    images = [renderer.render(scene)[..., :3].cpu() for scene in scenes] if options.return_images else None
+    with torch.no_grad():
+        scenes = [
+            Scene.from_tensors_sparse(
+                translation=torch.rand(1, 1, n_objects, 2),
+                scale=torch.rand(1, 1, n_objects, 2) / 5 + 0.05,
+                angle=torch.rand(1, 1, n_objects, 1),
+                color=torch.rand(1, 1, n_objects, 3),
+                confidence=torch.ones(1, 1, n_objects, 1),
+                objectShape=torch.ones(1, 1, n_objects, 1, dtype=torch.uint8) * (Shape2D.DISK.value if fdg == None else Shape2D.FOURIER_SHAPE.value),
+                fourierCoefficients=None if fdg == None else fdg.sample(n_objects)[None, None, ...],
+            )
+            for _ in range(options.n_samples)
+        ]
+        images = [renderer.render(scene)[..., :3].cpu() for scene in scenes] if options.return_images else None
 
     if options.return_scenes and options.return_images:
         return list(zip(images, scenes))
@@ -63,9 +63,10 @@ def regenerate_job(options: DatasetOptions, arg_renderer: Optional[Renderer2D] =
     # TODO: warning?
     return tuple()
 
-
-class RandomDataset(Dataset):
+class RandomDataset(AnyDataset):
     def __init__(self, options: DatasetOptions):
+        super().__init__(None)
+        
         self.options = options
         self.renderer: Optional[Renderer2D] = None
         self.fdg: Optional[FourierDescriptorsGenerator] = None
@@ -78,12 +79,6 @@ class RandomDataset(Dataset):
         else:
             self.pool = None
         self.regenerate()
-
-    def __getitem__(self, idx):
-        return self.data[idx]
-
-    def __len__(self):
-        return len(self.data)
 
     def append_new_job(self):
         self.futures.append(self.pool.submit(regenerate_job, self.options))
@@ -99,11 +94,3 @@ class RandomDataset(Dataset):
                 if self.options.fourier_shapes_options != None:
                     self.fdg = FourierDescriptorsGenerator(self.options.fourier_shapes_options)
             self.data = regenerate_job(self.options, arg_renderer=self.renderer, arg_fdg=self.fdg)
-
-    @staticmethod
-    def collate_fn(batch):
-        if type(batch[0]) is tuple:
-            batch = [list(x) for x in zip(*batch)]
-            return [torch.cat(x, dim=0) for x in batch]
-        else:
-            return torch.cat(batch, dim=0)

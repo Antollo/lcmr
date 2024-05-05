@@ -10,13 +10,19 @@ from lcmr.utils.guards import typechecked, ImageBHWC3, batch_dim, reduced_height
 
 @typechecked
 class PretrainedEncoder(Encoder):
-    def __init__(self, model: nn.Module, input_size: Optional[tuple[int, int]] = None):
+    def __init__(
+        self,
+        model: nn.Module,
+        input_size: Optional[tuple[int, int]] = None,
+        frozen: bool = True,
+    ):
         super().__init__()
 
         self.model = model
-        self.model.eval()
-        for param in self.model.parameters():
-            param.requires_grad = False
+        if frozen:
+            self.model.eval()
+            for param in self.model.parameters():
+                param.requires_grad = False
 
         transforms = [Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])]
         if input_size != None:
