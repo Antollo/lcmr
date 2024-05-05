@@ -20,22 +20,15 @@ class OpenGlFourierRenderer(OpenGlShapeRenderer):
         verts = reconstruct_contour(objects.fourierCoefficients, n_points=self.n_verts)
         verts = torch.nn.functional.pad(verts, (0, 1), "constant", 1.0)
         verts = (objects.transformation.matrix[:, None, ...] @ verts[..., None]).squeeze(-1)[..., :2]
-        mask = simplify_contour(verts)
-
-        verts = torch.masked_select(verts, mask).view(-1, 2)
-        verts = verts.split(mask.sum(axis=-2).flatten().tolist())
-        faces = triangularize_contour(verts, contour_only=self.contours_only)
+        faces = triangulate_contour(verts[None, ...], contour_only=self.contours_only)[0]
 
         colors = objects.appearance.color.repeat(1, self.n_verts).reshape(-1, self.n_verts, 3)
-        colors = torch.masked_select(colors, mask).view(-1, 3)
-
         confidence = objects.appearance.confidence.expand(-1, self.n_verts).reshape(-1, self.n_verts, 1)
-        confidence = torch.masked_select(confidence, mask).view(-1, 1)
 
-        self.vert_vbo = self.ctx.buffer(torch.cat(verts).detach().cpu().contiguous().numpy())
+        self.vert_vbo = self.ctx.buffer(verts.cpu().contiguous().numpy())
         self.color_vbo = self.ctx.buffer(colors.cpu().contiguous().numpy())
         self.confidence_vbo = self.ctx.buffer(confidence.cpu().contiguous().numpy())
-        self.ibo = self.ctx.buffer(faces)
+        self.ibo = self.ctx.buffer(faces.numpy())
 
         self.vao = self.ctx.vertex_array(
             self.shader,

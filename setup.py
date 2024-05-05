@@ -16,8 +16,8 @@ setup(
         'typeguard<3.0.0',  # torchtyping requires typeguard<3.0.0
         'kornia',
         'moderngl',
-        'mapbox-earcut',
         'pyefd',
-        'scikit-learn'
+        'scikit-learn',
+        'torch_earcut @ git+https://github.com/Antollo/torch_earcut',
     ]
 )

@@ -5,11 +5,11 @@ from torchtyping import TensorType
 from functools import cache
 from collections.abc import Iterable
 from dataclasses import dataclass
-from mapbox_earcut import triangulate_float32
+from torch_earcut import triangulate
 from pyefd import elliptic_fourier_descriptors
 from sklearn.mixture import BayesianGaussianMixture
 
-from lcmr.utils.guards import typechecked, object_dim, vec_dim, optional_dims
+from lcmr.utils.guards import typechecked, batch_dim, object_dim, vec_dim, optional_dims
 from lcmr.utils.math import angle_to_rotation_matrix
 
 
@@ -66,7 +66,7 @@ def normalize_efd(descriptors: TensorType[optional_dims:..., -1, 4, torch.float3
 
     size = descriptors[..., 0, 0]
     descriptors = descriptors / torch.abs(size)[:, None, None]
-    
+
     descriptors = descriptors.reshape(*shape)
 
     return descriptors
@@ -88,23 +88,25 @@ def simplify_contour(contour: TensorType[object_dim, vec_dim, 2, torch.float32],
 
 
 @typechecked
-def triangularize_contour(
-    contours: Iterable[TensorType[-1, 2, torch.float32]] | TensorType[-1, -1, 2, torch.float32], contour_only: bool = False
-) -> np.ndarray:
-    faces_list = []
-    total = 0
-    for contour in contours:
-        if contour_only:
-            # just contour
-            faces = np.roll(np.repeat(np.arange(len(contour), dtype=np.int32), 2), -1)
-        else:
-            # real triangularisation
-            faces = triangulate_float32(contour.detach().cpu().numpy(), np.array([len(contour)])).astype(np.int32)
+def triangulate_contour(
+    contours: TensorType[batch_dim, object_dim, -1, 2, torch.float32], contour_only: bool = False
+) -> TensorType[batch_dim, -1, -1, torch.int32]:
+    batch_len, object_len, vec_len, _ = contours.shape
 
-        faces_list.append(faces + total)
-        total += contour.shape[0]
-
-    return np.concatenate(faces_list).reshape(-1, 2 if contour_only else 3)
+    if contour_only:
+        indices = torch.from_numpy(np.roll(np.repeat(np.arange(vec_len, dtype=np.int32), 2), -1))
+        faces = [indices.clone() for _ in range(batch_len * object_len)]
+    else:
+        faces = triangulate(contours.flatten(0, 1).cpu().contiguous())
+    faces = [faces[i : i + object_len] for i in range(0, len(faces), object_len)]
+    for i in range(len(faces)):
+        total = 0
+        for indices in faces[i]:
+            indices += total
+            total += vec_len
+        faces[i] = torch.cat(faces[i])
+    faces = torch.nn.utils.rnn.pad_sequence(faces, batch_first=True, padding_value=-1).view(batch_len, -1, 2 if contour_only else 3).to(contours.device)
+    return faces
 
 
 @typechecked
