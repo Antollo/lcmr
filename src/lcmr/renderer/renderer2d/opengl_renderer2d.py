@@ -1,11 +1,15 @@
+from typing import Optional
+
+import moderngl
 import torch
 from torchtyping import TensorType
-import moderngl
 
-from lcmr.renderer.renderer2d.renderer2d import Renderer2D, height_dim, width_dim
-from lcmr.grammar import Scene, Layer
-from lcmr.utils.guards import typechecked, ImageBHWC4, ImageHWC4
+from lcmr.grammar import Layer, Scene
+from lcmr.grammar.scene_data import SceneData
 from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlDiskRenderer, OpenGlFourierRenderer, OpenGlShapeRendererOptions
+from lcmr.renderer.renderer2d.renderer2d import Renderer2D, height_dim, width_dim
+from lcmr.utils.colors import colors
+from lcmr.utils.guards import ImageHWC4, typechecked
 
 
 @typechecked
@@ -14,14 +18,16 @@ class OpenGLRenderer2D(Renderer2D):
         self,
         raster_size: tuple[int, int],
         samples: int = 4,
-        background_color: TensorType[4, torch.float32] = torch.zeros(4),
+        background_color: Optional[TensorType[4, torch.float32]] = None,
         n_verts: int = 64,
         device: torch.device = torch.device("cpu"),
         wireframe: bool = False,
         contours_only: bool = False,
     ):
-        super().__init__(raster_size)
+        super().__init__(raster_size=raster_size, device=device)
 
+        if background_color == None:
+            background_color = colors.black
         try:
             self.ctx = moderngl.create_standalone_context()
         except:
@@ -34,23 +40,32 @@ class OpenGLRenderer2D(Renderer2D):
         self.fbo2 = self.ctx.framebuffer([self.ctx.renderbuffer(raster_size[::-1], components=4, dtype="f4")])
         # self.buf = self.ctx.buffer(reserve=raster_size[0] * raster_size[1] * 4 * 4)
 
-        self.device = device
         self.background_color = background_color.to(device)
         self.background_color_list = background_color.tolist()
         self.background = background_color[None, None, ...].to(device).expand(*raster_size, -1)
         self.ctx.wireframe = wireframe
 
-        options = OpenGlShapeRendererOptions(ctx=self.ctx, fbo=self.fbo1, n_verts=n_verts, contours_only=contours_only)
+        self.contours_only = contours_only
+        self.n_verts = n_verts
+
+    @property
+    def n_verts(self):
+        return self._n_verts
+
+    @n_verts.setter
+    def n_verts(self, value):
+        self._n_verts = value
+        options = OpenGlShapeRendererOptions(ctx=self.ctx, fbo=self.fbo1, n_verts=self._n_verts, contours_only=self.contours_only)
         self.shape_renderers = [OpenGlDiskRenderer(options), OpenGlFourierRenderer(options)]
 
     def __del__(self):
         self.ctx.release()
 
-    def render(self, scene: Scene) -> ImageBHWC4:
+    def render(self, scene: Scene) -> SceneData:
         self.ctx.gc()
 
         if len(scene) == 1:
-            return self.render_scene(scene)
+            imgs = self.render_scene(scene)
         else:
             imgs = []
             # somehow iterating scene like that is a little bit time consuming
@@ -58,7 +73,13 @@ class OpenGLRenderer2D(Renderer2D):
             for single_scene in scene:
                 img = self.render_scene(single_scene)
                 imgs.append(img)
-            return torch.cat(imgs, dim=0)
+            imgs = torch.cat(imgs, dim=0)
+
+        return SceneData(
+            scene=scene,
+            image=imgs,
+            batch_size=[len(scene)],
+        )
 
     def render_layer(self, layer: Layer) -> ImageHWC4:
 
@@ -98,9 +119,7 @@ class OpenGLRenderer2D(Renderer2D):
         # cudart.cudaGraphicsUnregisterResource(resource)[0]
         # assert result == 0
 
-        rendered_layer = (
-            torch.frombuffer(bytearray(self.fbo2.read(components=4, dtype="f4")), dtype=torch.float32).reshape((*self.raster_size, 4)).to(self.device)
-        )
+        rendered_layer = torch.frombuffer(bytearray(self.fbo2.read(components=4, dtype="f4")), dtype=torch.float32).reshape((*self.raster_size, 4)).to(self.device)
 
         alpha = rendered_layer[..., 3, None]
         rgb = rendered_layer[..., :3]

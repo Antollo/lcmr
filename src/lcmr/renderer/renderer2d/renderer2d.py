@@ -1,18 +1,21 @@
 import abc
+
 import torch
 from torchtyping import TensorType
 
 from lcmr.grammar import Scene
-from lcmr.utils.guards import ImageBHWC4, height_dim, width_dim, optional_dims
+from lcmr.grammar.scene_data import SceneData
 from lcmr.renderer.renderer import Renderer
+from lcmr.utils.guards import height_dim, optional_dims, width_dim
 
 
 class Renderer2D(Renderer):
-    def __init__(self, raster_size: tuple[int, int]):
+    def __init__(self, raster_size: tuple[int, int], device: torch.device = torch.device("cpu")):
         self.raster_size = raster_size
+        self.device = device
 
     @abc.abstractmethod
-    def render(self, scene: Scene) -> ImageBHWC4:
+    def render(self, scene: Scene) -> SceneData:
         pass
 
     @staticmethod

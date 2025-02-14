@@ -1,34 +1,32 @@
 import torch
 import torch.nn as nn
 from torchtyping import TensorType
-from typing import Union
 
 from lcmr.encoder import Encoder
+from lcmr.grammar.scene_data import SceneData
 from lcmr.modeler import Modeler
 from lcmr.renderer import Renderer
-from lcmr.grammar import Scene
-from lcmr.utils.guards import typechecked, batch_dim, height_dim, width_dim, channel_dim, channel_dim_2
+from lcmr.utils.guards import batch_dim, channel_dim, height_dim, typechecked, width_dim
 
 
 @typechecked
 class ReconstructionModel(nn.Module):
-    def __init__(self, encoder: Encoder, modeler: Modeler, renderer: Renderer, return_images: bool = True):
+    def __init__(self, encoder: Encoder, modeler: Modeler, renderer: Renderer, frozen_encoder: bool = True):
         super().__init__()
 
         self.encoder = encoder
         self.modeler = modeler
         self.renderer = renderer
-        self.return_images = return_images
+        self.frozen_encoder = frozen_encoder
 
-    def forward(self, x: TensorType[batch_dim, height_dim, width_dim, channel_dim, torch.float32]) -> Union[
-        Scene,
-        TensorType[batch_dim, height_dim, width_dim, channel_dim_2, torch.float32],
-        tuple[Scene, TensorType[batch_dim, height_dim, width_dim, channel_dim_2, torch.float32]],
-    ]:
-        emb = self.encoder(x)
+    def forward(self, x: TensorType[batch_dim, height_dim, width_dim, channel_dim, torch.float32], render: bool = True) -> SceneData:
+
+        with torch.set_grad_enabled(not self.frozen_encoder):
+            emb = self.encoder(x)
+
         scene = self.modeler(emb)
-        if self.return_images:
-            img = self.renderer.render(scene)
-            return scene, img
+        if render:
+            scene_data = self.renderer.render(scene)
         else:
-            return scene
+            scene_data = SceneData(scene=scene, batch_size=scene.shape)
+        return scene_data

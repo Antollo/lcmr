@@ -1,25 +1,17 @@
-import torch
-import numpy as np
 from typing import Union
-from torchtyping import TensorType
-from pytorch3d.structures import Meshes
-from pytorch3d.renderer import (
-    look_at_view_transform,
-    FoVOrthographicCameras,
-    RasterizationSettings,
-    MeshRenderer,
-    MeshRasterizer,
-    TexturesVertex,
-    TexturesVertex,
-    AmbientLights,
-    BlendParams,
-)
-from pytorch3d.renderer.mesh.shader import ShaderBase, Fragments
+
+import numpy as np
+import torch
 from pytorch3d.ops import interpolate_face_attributes
+from pytorch3d.renderer import AmbientLights, BlendParams, FoVOrthographicCameras, MeshRasterizer, MeshRenderer, RasterizationSettings, TexturesVertex, look_at_view_transform
+from pytorch3d.renderer.mesh.shader import Fragments, ShaderBase
+from pytorch3d.structures import Meshes
+from torchtyping import TensorType
+from typing_extensions import deprecated
 
 from lcmr.grammar import Scene
 from lcmr.renderer.renderer2d import Renderer2D
-from lcmr.utils.guards import typechecked, ImageBHWC4
+from lcmr.utils.guards import ImageBHWC4, typechecked
 
 
 def simple_flat_shading_rgba(meshes, fragments, lights, cameras, materials) -> torch.Tensor:
@@ -162,6 +154,7 @@ class SimpleFlatRgbaShader(ShaderBase):
 
 
 # TODO: support shape, support composition, support layer.scale
+@deprecated("use lcmr_ext's PyTorch3DRenderer2D")
 @typechecked
 class PyTorch3DRenderer2D(Renderer2D):
     def __init__(

@@ -1,0 +1,33 @@
+{
+    "cSpell.words": [
+        "arange",
+        "BHWC",
+        "coeffs",
+        "consts",
+        "convnet",
+        "dtype",
+        "earcut",
+        "GELU",
+        "initargs",
+        "Jaccard",
+        "keepdim",
+        "kornia",
+        "lcmr",
+        "lerp",
+        "logdir",
+        "LPIPS",
+        "mapbox",
+        "moderngl",
+        "opengl",
+        "optim",
+        "pyefd",
+        "setdiff",
+        "tensorboard",
+        "tensorclass",
+        "tensordict",
+        "torchmetrics",
+        "torchtyping",
+        "tqdm",
+        "typechecked"
+    ]
+}

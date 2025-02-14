@@ -1,25 +1,32 @@
-import torch
 import moderngl
+import torch
 
 from lcmr.grammar import Object
 from lcmr.grammar.shapes import Shape2D
-from lcmr.utils.fourier_shape_descriptors import reconstruct_contour, simplify_contour, triangulate_contour
-from lcmr.utils.guards import typechecked
 from lcmr.renderer.renderer2d.opengl_renderer2d_internals import OpenGlShapeRenderer, OpenGlShapeRendererOptions
+from lcmr.utils.elliptic_fourier_descriptors import reconstruct_contour, triangulate_contour
+from lcmr.utils.guards import typechecked
 
 
 @typechecked
 class OpenGlFourierRenderer(OpenGlShapeRenderer):
     def __init__(self, options: OpenGlShapeRendererOptions, simplify_threshold: float = 0.001):
-        super().__init__(Shape2D.FOURIER_SHAPE, options)
+        super().__init__(Shape2D.EFD_SHAPE, options)
         self.simplify_threshold = simplify_threshold
 
     def init_vao(self, objects: Object):
         self.last_length = objects.shape[0]
 
-        verts = reconstruct_contour(objects.fourierCoefficients, n_points=self.n_verts)
+        verts = reconstruct_contour(objects.efd, n_points=self.n_verts)
         verts = torch.nn.functional.pad(verts, (0, 1), "constant", 1.0)
         verts = (objects.transformation.matrix[:, None, ...] @ verts[..., None]).squeeze(-1)[..., :2]
+
+        # if verts.shape[0] == 1:
+        #   we can simplify the contour (remove some points) easily
+        #   TODO: do it for batch
+        #   mask = simplify_contour(verts)
+        #   verts = torch.masked_select(verts, mask).view(1, -1, 2)
+
         faces = triangulate_contour(verts[None, ...], contour_only=self.contours_only)[0]
 
         colors = objects.appearance.color.repeat(1, self.n_verts).reshape(-1, self.n_verts, 3)
@@ -28,7 +35,7 @@ class OpenGlFourierRenderer(OpenGlShapeRenderer):
         self.vert_vbo = self.ctx.buffer(verts.cpu().contiguous().numpy())
         self.color_vbo = self.ctx.buffer(colors.cpu().contiguous().numpy())
         self.confidence_vbo = self.ctx.buffer(confidence.cpu().contiguous().numpy())
-        self.ibo = self.ctx.buffer(faces.numpy())
+        self.ibo = self.ctx.buffer(faces.cpu().contiguous().numpy())
 
         self.vao = self.ctx.vertex_array(
             self.shader,

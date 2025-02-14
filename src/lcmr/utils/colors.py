@@ -1,9 +1,11 @@
-import torch
-from torchtyping import TensorType
-from matplotlib import colors as mcolors
 from dataclasses import dataclass
+from typing import NewType
 
-Color = TensorType[4, torch.float32]
+import torch
+from matplotlib import colors as matplotlib_colors
+from torchtyping import TensorType
+
+Color = NewType("Color", TensorType[4, torch.float32])
 
 
 @dataclass
@@ -158,4 +160,4 @@ class Colors:
     yellowgreen: Color
 
 
-colors: Colors = Colors(**{key: torch.tensor(mcolors.to_rgba(value), dtype=torch.float32) for key, value in mcolors.CSS4_COLORS.items()})
+colors: Colors = Colors(**{key: torch.tensor(matplotlib_colors.to_rgba(value), dtype=torch.float32) for key, value in matplotlib_colors.CSS4_COLORS.items()})
